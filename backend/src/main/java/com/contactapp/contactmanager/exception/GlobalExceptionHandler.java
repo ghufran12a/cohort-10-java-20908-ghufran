@@ -37,6 +37,27 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, ex.getMessage(), request, null);
     }
 
+    // Wrong email/phone or password at login -> 401
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiError> handleInvalidCredentials(InvalidCredentialsException ex, HttpServletRequest request) {
+        log.warn("Failed login attempt [{} {}]", request.getMethod(), request.getRequestURI());
+        return build(HttpStatus.UNAUTHORIZED, ex.getMessage(), request, null);
+    }
+
+    // Email/phone already registered -> 409
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<ApiError> handleDuplicate(DuplicateResourceException ex, HttpServletRequest request) {
+        log.warn("Duplicate: {} [{} {}]", ex.getMessage(), request.getMethod(), request.getRequestURI());
+        return build(HttpStatus.CONFLICT, ex.getMessage(), request, null);
+    }
+
+    // A business rule was broken (e.g. "give an email or a phone") -> 400
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiError> handleBadRequest(BadRequestException ex, HttpServletRequest request) {
+        log.warn("Bad request: {} [{} {}]", ex.getMessage(), request.getMethod(), request.getRequestURI());
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request, null);
+    }
+
     // @Valid failed (bad phone, bad email, empty name...) -> 400 with one message per bad field
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
