@@ -3,9 +3,12 @@ package com.contactapp.contactmanager.entity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
@@ -14,8 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * One row of the "contacts" table. One contact has MANY emails.
- * (The user and phones relationships are added in the next step.)
+ * One row of the "contacts" table.
+ * Many contacts -> one user. One contact -> many emails and many phones.
  */
 @Entity
 @Table(name = "contacts")
@@ -41,11 +44,19 @@ public class Contact {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    // Many contacts belong to ONE user. This side holds the foreign key user_id.
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     // mappedBy = "contact" -> the foreign key lives in Email.contact, not here
     // cascade ALL     -> saving/deleting a contact also saves/deletes its emails
     // orphanRemoval   -> removing an email from this list deletes it from the database
     @OneToMany(mappedBy = "contact", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Email> emails = new ArrayList<>();
+
+    @OneToMany(mappedBy = "contact", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Phone> phones = new ArrayList<>();
 
     // JPA (Hibernate) requires an empty constructor
     public Contact() {
@@ -67,6 +78,16 @@ public class Contact {
     public void removeEmail(Email e) {
         emails.remove(e);
         e.setContact(null);
+    }
+
+    public void addPhone(Phone p) {
+        phones.add(p);
+        p.setContact(this);
+    }
+
+    public void removePhone(Phone p) {
+        phones.remove(p);
+        p.setContact(null);
     }
 
     public Long getId() {
@@ -113,7 +134,19 @@ public class Contact {
         return createdAt;
     }
 
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
     public List<Email> getEmails() {
         return emails;
+    }
+
+    public List<Phone> getPhones() {
+        return phones;
     }
 }
