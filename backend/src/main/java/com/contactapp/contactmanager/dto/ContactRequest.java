@@ -22,9 +22,9 @@ public record ContactRequest(
         @Size(max = 100, message = "Title must be at most 100 characters")
         String title,
 
-        // emails are optional; @Valid makes Spring validate every item in the list too
-        @Valid List<EmailDto> emails,
+        // emails are optional; List<@Valid ...> makes Spring validate every item in the list too
+        List<@Valid EmailDto> emails,
 
         @NotEmpty(message = "At least one phone number is required")
-        @Valid List<PhoneDto> phones) {
+        List<@Valid PhoneDto> phones) {
 }
