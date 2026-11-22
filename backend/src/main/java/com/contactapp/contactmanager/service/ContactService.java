@@ -73,8 +73,11 @@ public class ContactService {
     public ContactResponse update(Long userId, Long contactId, ContactRequest request) {
         Contact contact = findActive(userId, contactId);
         applyRequest(contact, request);
+        // flush = write the changes to the database NOW, so the new emails/phones get their ids
+        // before we build the response (otherwise their id would show as null)
+        contactRepository.saveAndFlush(contact);
         log.info("User {} updated contact {}", userId, contactId);
-        return ContactResponse.from(contact); // changes are saved automatically at the end of the transaction
+        return ContactResponse.from(contact);
     }
 
     /** Soft delete: the row stays, we only stamp the time. It can be recovered for 30 days. */
