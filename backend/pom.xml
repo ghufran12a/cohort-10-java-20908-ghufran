@@ -28,6 +28,11 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
+		<!-- SonarQube: how this project is named on the server, and where to find the test coverage report.
+		     The server address and token are given on the command line / environment, never stored here. -->
+		<sonar.projectKey>contact-manager-backend</sonar.projectKey>
+		<sonar.projectName>Contact Manager - Backend (Java)</sonar.projectName>
+		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 	<dependencies>
 		<dependency>
