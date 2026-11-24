@@ -112,3 +112,80 @@ body {
 .topbar-user { display: flex; gap: 10px; align-items: center; }
 
 .container { max-width: 960px; margin: 0 auto; padding: 20px 16px; }
+
+/* ---- contacts ---- */
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.page-head h2 { margin: 0; }
+
+.search {
+  width: 100%;
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.contact-list { list-style: none; margin: 0; padding: 0; }
+
+.contact-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+
+.contact-info { display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
+.contact-info .hint { margin: 0; }
+.contact-actions { display: flex; gap: 6px; }
+
+.empty { text-align: center; color: var(--muted); padding: 32px 0; }
+
+.pagination { display: flex; gap: 12px; justify-content: center; align-items: center; margin-top: 16px; }
+
+.btn-small { padding: 4px 10px; font-size: 0.85rem; }
+.btn-danger { color: var(--danger); border-color: var(--danger); }
+.tag { background: var(--bg); border-radius: 4px; padding: 1px 6px; font-size: 0.8rem; color: var(--muted); }
+
+/* ---- popups ---- */
+.modal {
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.modal::backdrop { background: rgba(0, 0, 0, 0.45); }
+.modal h3 { margin-top: 0; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+/* min-width: 0 because a <fieldset> otherwise refuses to shrink and pushes content off small screens */
+.rows { min-width: 0; border: 1px solid var(--border); border-radius: 6px; margin: 0 0 12px; padding: 8px 10px; }
+.rows legend { font-size: 0.9rem; font-weight: 500; }
+.row { display: flex; gap: 6px; margin-bottom: 6px; }
+
+.row input, .row select {
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.row input { flex: 1; min-width: 0; }
+.row input[aria-invalid='true'] { border-color: var(--danger); }

@@ -10,6 +10,7 @@ export function Layout() {
         <strong>Contact Manager</strong>
         <nav>
           <NavLink to="/contacts">Contacts</NavLink>
+          <NavLink to="/trash">Trash</NavLink>
         </nav>
         <div className="topbar-user">
           <span>{user?.name}</span>
