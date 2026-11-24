@@ -2,6 +2,7 @@ package com.contactapp.contactmanager.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -62,7 +63,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
         Map<String, String> fieldErrors = new LinkedHashMap<>();
-        ex.getBindingResult().getFieldErrors()
+        // One field can break several rules at once (an empty phone is "blank" AND "not digits"), and Java does
+        // not guarantee their order. So we put the "... is required" rule first to always show the same message.
+        ex.getBindingResult().getFieldErrors().stream()
+                .sorted(Comparator.comparingInt(fe -> "NotBlank".equals(fe.getCode()) ? 0 : 1))
                 .forEach(fe -> fieldErrors.putIfAbsent(fe.getField(), fe.getDefaultMessage()));
         log.warn("Validation failed [{} {}]: {}", request.getMethod(), request.getRequestURI(), fieldErrors);
         return build(HttpStatus.BAD_REQUEST, "Validation failed", request, fieldErrors);

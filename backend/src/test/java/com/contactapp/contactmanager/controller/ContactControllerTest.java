@@ -102,6 +102,18 @@ class ContactControllerTest {
     }
 
     @Test
+    void emptyPhoneAlwaysSaysRequired() throws Exception {
+        String emptyPhone = """
+                {"firstName":"Ali","lastName":"Khan","phones":[{"phone":"","label":"home"}]}
+                """;
+
+        mockMvc.perform(post("/api/contacts").with(loggedIn())
+                        .contentType(MediaType.APPLICATION_JSON).content(emptyPhone))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors['phones[0].phone']").value("Phone number is required"));
+    }
+
+    @Test
     void brokenJsonReturns400() throws Exception {
         mockMvc.perform(post("/api/contacts").with(loggedIn())
                         .contentType(MediaType.APPLICATION_JSON).content("{\"firstName\":"))
