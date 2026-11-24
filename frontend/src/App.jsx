@@ -4,6 +4,7 @@ import { Layout } from './components/Layout'
 import { ProtectedRoute, PublicOnlyRoute } from './components/RouteGuards'
 import { AuthPage } from './pages/AuthPage'
 import { ContactsPage } from './pages/ContactsPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { TrashPage } from './pages/TrashPage'
 
 // Routing: which component shows for which url (without reloading the page).
@@ -20,6 +21,7 @@ export default function App() {
             <Route element={<Layout />}>
               <Route path="/contacts" element={<ContactsPage />} />
               <Route path="/trash" element={<TrashPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
             </Route>
           </Route>
 
