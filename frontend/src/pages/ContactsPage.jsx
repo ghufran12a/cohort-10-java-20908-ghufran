@@ -23,9 +23,9 @@ export function ContactsPage() {
   useEffect(() => {
     let ignore = false // protects against an OLD, slower response overwriting a newer one
 
-    async function load() {
-      try {
-        const result = await contactsApi.list({ search, page, size: PAGE_SIZE })
+    // .then() runs when the answer arrives, .catch() when something fails
+    contactsApi.list({ search, page, size: PAGE_SIZE })
+      .then((result) => {
         if (ignore) return
         // e.g. we deleted the last contact on the last page: step back one page
         if (result.content.length === 0 && page > 0) {
@@ -34,12 +34,11 @@ export function ContactsPage() {
         }
         setData(result)
         setLoadError('')
-      } catch (err) {
+      })
+      .catch((err) => {
         if (!ignore) setLoadError(parseApiError(err).message)
-      }
-    }
+      })
 
-    load()
     return () => {
       ignore = true
     }
