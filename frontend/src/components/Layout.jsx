@@ -11,6 +11,7 @@ export function Layout() {
         <nav>
           <NavLink to="/contacts">Contacts</NavLink>
           <NavLink to="/trash">Trash</NavLink>
+          <NavLink to="/profile">Profile</NavLink>
         </nav>
         <div className="topbar-user">
           <span>{user?.name}</span>
