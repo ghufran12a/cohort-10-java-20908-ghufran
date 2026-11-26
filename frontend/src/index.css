@@ -197,7 +197,11 @@ h1 { font-size: 1.7rem; margin: 0 0 4px; letter-spacing: -0.02em; }
 .search-box { display: flex; align-items: center; gap: 8px; padding: 0 10px; background: var(--bg); border-radius: 10px; color: var(--muted); }
 .search-box:focus-within { outline: 2px solid var(--accent); }
 .search-box input { flex: 1; min-width: 0; padding: 9px 0; border: none; outline: none; background: none; color: var(--text); font: inherit; }
-.count { margin: 8px 2px 0; color: var(--muted); font-size: 0.8rem; }
+.list-tools { display: flex; align-items: center; gap: 12px; margin: 8px 2px 0; }
+.count { flex: 1; margin: 0; color: var(--muted); font-size: 0.8rem; }
+.link-btn { border: none; background: none; padding: 2px; color: var(--accent); cursor: pointer; font: inherit; font-size: 0.85rem; font-weight: 500; }
+.example { margin: 0 0 12px; padding: 10px; overflow-x: auto; border-radius: 10px; background: var(--bg); font-size: 0.75rem; }
+.import-errors { max-height: 200px; overflow-y: auto; color: var(--danger); font-size: 0.85rem; }
 
 .list-scroll { flex: 1; overflow-y: auto; }
 .list-scroll .alert { margin: 12px; }
