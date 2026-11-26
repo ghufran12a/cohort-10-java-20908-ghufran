@@ -6,10 +6,12 @@ import { ContactFormModal } from '../components/ContactFormModal'
 import { ContactList } from '../components/ContactList'
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal'
 import { Icon } from '../components/Icon'
+import { ImportModal } from '../components/ImportModal'
 import { ListSkeleton } from '../components/ListSkeleton'
 import { Pagination } from '../components/Pagination'
 import { useDebounce } from '../hooks/useDebounce'
 import { useToast } from '../toast/useToast'
+import { downloadFile } from '../utils/downloadFile'
 
 const PAGE_SIZE = 10
 
@@ -24,7 +26,7 @@ export function ContactsPage() {
   const [loadError, setLoadError] = useState('')
   const [reloadCount, setReloadCount] = useState(0) // changing it re-runs the effect below
   const [selected, setSelected] = useState(null) // the contact shown on the right
-  const [modal, setModal] = useState(null) // null | 'create' | 'edit' | 'delete'
+  const [modal, setModal] = useState(null) // null | 'create' | 'edit' | 'delete' | 'import'
 
   // Runs after the first render and again whenever search, page or reloadCount changes.
   useEffect(() => {
@@ -74,6 +76,15 @@ export function ContactsPage() {
     showToast('Contact moved to Trash')
   }
 
+  async function handleExport() {
+    try {
+      downloadFile(await contactsApi.exportCsv(), 'contacts.csv')
+      showToast('Contacts exported')
+    } catch (err) {
+      showToast(parseApiError(err).message)
+    }
+  }
+
   return (
     <div className={selected ? 'split has-selection' : 'split'}>
       <section className="list-pane" aria-label="Contact list">
@@ -93,9 +104,13 @@ export function ContactsPage() {
                 setPage(0) // a new search always starts on the first page
               }} />
           </label>
-          {data && (
-            <p className="count">{data.totalElements} {search ? 'matching' : 'saved'} contact(s)</p>
-          )}
+          <div className="list-tools">
+            {data && (
+              <p className="count">{data.totalElements} {search ? 'matching' : 'saved'} contact(s)</p>
+            )}
+            <button type="button" className="link-btn" onClick={() => setModal('import')}>Import</button>
+            <button type="button" className="link-btn" onClick={handleExport}>Export</button>
+          </div>
         </div>
 
         <div className="list-scroll">
@@ -134,6 +149,7 @@ export function ContactsPage() {
         <ContactFormModal contact={modal === 'edit' ? selected : undefined}
           onSave={handleSave} onClose={closeModal} />
       )}
+      {modal === 'import' && <ImportModal onImported={reload} onClose={closeModal} />}
       {modal === 'delete' && (
         <DeleteConfirmModal contact={selected} onConfirm={handleDelete} onClose={closeModal} />
       )}

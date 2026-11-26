@@ -14,6 +14,16 @@ export const contactsApi = {
     await api.delete(`/contacts/${id}`)
   },
 
+  // a "blob" is raw file data (not JSON)
+  exportCsv: async () => (await api.get('/contacts/export', { responseType: 'blob' })).data,
+
+  // FormData is how a browser sends a file ("multipart/form-data")
+  importCsv: async (file) => {
+    const form = new FormData()
+    form.append('file', file)
+    return (await api.post('/contacts/import', form)).data
+  },
+
   trash: async () => (await api.get('/contacts/trash')).data,
 
   restore: async (id) => (await api.post(`/contacts/${id}/restore`)).data,

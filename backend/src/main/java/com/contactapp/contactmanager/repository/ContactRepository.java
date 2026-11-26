@@ -33,6 +33,9 @@ public interface ContactRepository extends JpaRepository<Contact, Long> {
     // One contact, but ONLY if it belongs to this user (used for view, update, delete).
     Optional<Contact> findByIdAndUserId(Long id, Long userId);
 
+    // ALL active contacts of the user, sorted by name (used by the CSV export).
+    List<Contact> findByUserIdAndDeletedAtIsNullOrderByFirstNameAscLastNameAsc(Long userId);
+
     // The user's trash: soft-deleted contacts that can still be recovered.
     List<Contact> findByUserIdAndDeletedAtIsNotNull(Long userId);
 
