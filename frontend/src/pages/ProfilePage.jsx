@@ -1,26 +1,25 @@
 import { useEffect, useState } from 'react'
-import { contactsApi } from '../api/contacts'
 import { parseApiError } from '../api/errors'
 import { usersApi } from '../api/users'
 import { useAuth } from '../auth/useAuth'
+import { Avatar } from '../components/Avatar'
 import { ChangePasswordModal } from '../components/ChangePasswordModal'
+import { ThemeToggle } from '../components/ThemeToggle'
+import { useToast } from '../toast/useToast'
 
 export function ProfilePage() {
   const { logout } = useAuth()
-  const [info, setInfo] = useState(null) // { profile, contactCount, trashCount }
+  const showToast = useToast()
+  const [profile, setProfile] = useState(null)
   const [loadError, setLoadError] = useState('')
-  const [success, setSuccess] = useState('')
   const [showPasswordModal, setShowPasswordModal] = useState(false)
 
   // [] = run once, when the page is first shown
   useEffect(() => {
     let ignore = false
-    // Promise.all sends the three requests at the same time and waits for all of them
-    Promise.all([usersApi.me(), contactsApi.list({ page: 0, size: 1 }), contactsApi.trash()])
-      .then(([profile, contacts, trash]) => {
-        if (!ignore) {
-          setInfo({ profile, contactCount: contacts.totalElements, trashCount: trash.length })
-        }
+    usersApi.me()
+      .then((result) => {
+        if (!ignore) setProfile(result)
       })
       .catch((err) => {
         if (!ignore) setLoadError(parseApiError(err).message)
@@ -32,51 +31,50 @@ export function ProfilePage() {
 
   function handlePasswordChanged() {
     setShowPasswordModal(false)
-    setSuccess('Your password has been changed.')
+    showToast('Your password has been changed.')
   }
 
   return (
-    <section>
-      <h2>My profile</h2>
-      {success && <p className="success" role="status">{success}</p>}
+    <div className="page">
+      <h1>My profile</h1>
       {loadError && <p className="alert" role="alert">{loadError}</p>}
-      {!info && !loadError && <p>Loading profile...</p>}
+      {!profile && !loadError && <p>Loading profile...</p>}
 
-      {info && (
+      {profile && (
         <>
-          <div className="stats">
-            <div className="stat"><strong>{info.contactCount}</strong><span>Contacts</span></div>
-            <div className="stat"><strong>{info.trashCount}</strong><span>In trash</span></div>
-          </div>
+          <header className="detail-head">
+            <Avatar firstName={profile.name} size="lg" />
+            <h2>{profile.name}</h2>
+          </header>
           {/* dl = description list: pairs of "name: value" */}
           <dl className="details">
             <dt>Name</dt>
-            <dd>{info.profile.name}</dd>
+            <dd>{profile.name}</dd>
             <dt>Email</dt>
-            <dd>{info.profile.email ?? 'Not provided'}</dd>
+            <dd>{profile.email ?? 'Not provided'}</dd>
             <dt>Phone</dt>
-            <dd>{info.profile.phone ?? 'Not provided'}</dd>
+            <dd>{profile.phone ?? 'Not provided'}</dd>
             <dt>Member since</dt>
-            <dd>{new Date(info.profile.createdAt).toLocaleDateString()}</dd>
+            <dd>{new Date(profile.createdAt).toLocaleDateString()}</dd>
           </dl>
         </>
       )}
 
       <div className="profile-actions">
-        <button type="button" className="btn btn-primary"
-          onClick={() => {
-            setSuccess('')
-            setShowPasswordModal(true)
-          }}>
+        <button type="button" className="btn btn-primary" onClick={() => setShowPasswordModal(true)}>
           Change password
         </button>
         <button type="button" className="btn btn-danger" onClick={logout}>Logout</button>
+      </div>
+      {/* on a phone the sidebar is hidden, so the theme switch is also here */}
+      <div className="phone-only">
+        <ThemeToggle />
       </div>
 
       {showPasswordModal && (
         <ChangePasswordModal onChanged={handlePasswordChanged}
           onClose={() => setShowPasswordModal(false)} />
       )}
-    </section>
+    </div>
   )
 }
