@@ -3,6 +3,7 @@ package com.contactapp.contactmanager.dto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 
@@ -22,9 +23,10 @@ public record ContactRequest(
         @Size(max = 100, message = "Title must be at most 100 characters")
         String title,
 
-        // emails are optional; List<@Valid ...> makes Spring validate every item in the list too
-        List<@Valid EmailDto> emails,
+        // emails are optional; List<@Valid ...> makes Spring validate every item in the list too.
+        // @Valid skips null items, so @NotNull rejects things like "emails": [null]
+        List<@NotNull(message = "Email entry must not be null") @Valid EmailDto> emails,
 
         @NotEmpty(message = "At least one phone number is required")
-        List<@Valid PhoneDto> phones) {
+        List<@NotNull(message = "Phone entry must not be null") @Valid PhoneDto> phones) {
 }

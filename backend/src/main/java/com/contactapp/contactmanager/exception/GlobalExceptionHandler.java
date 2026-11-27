@@ -7,6 +7,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -97,7 +98,8 @@ public class GlobalExceptionHandler {
         if (ex instanceof ErrorResponse errorResponse) {
             HttpStatusCode status = errorResponse.getStatusCode();
             log.warn("{} [{} {}]: {}", status, request.getMethod(), request.getRequestURI(), ex.getMessage());
-            return build(status, errorResponse.getBody().getDetail(), request, null);
+            // keep Spring's headers too, e.g. a 405 answer must say which methods ARE allowed ("Allow")
+            return build(status, errorResponse.getBody().getDetail(), request, null, errorResponse.getHeaders());
         }
         // A real bug: log everything for us, but tell the client nothing about our internals
         log.error("Unexpected error [{} {}]", request.getMethod(), request.getRequestURI(), ex);
@@ -106,9 +108,14 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<ApiError> build(HttpStatusCode status, String message,
                                            HttpServletRequest request, Map<String, String> fieldErrors) {
+        return build(status, message, request, fieldErrors, HttpHeaders.EMPTY);
+    }
+
+    private ResponseEntity<ApiError> build(HttpStatusCode status, String message, HttpServletRequest request,
+                                           Map<String, String> fieldErrors, HttpHeaders headers) {
         String reason = (status instanceof HttpStatus hs) ? hs.getReasonPhrase() : status.toString();
         ApiError body = new ApiError(LocalDateTime.now(), status.value(), reason, message,
                 request.getRequestURI(), fieldErrors);
-        return ResponseEntity.status(status).body(body);
+        return ResponseEntity.status(status).headers(headers).body(body);
     }
 }

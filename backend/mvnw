@@ -191,6 +191,14 @@ case "${MVNW_PASSWORD:+has-password}" in
 has-password) [ -n "${MVNW_USERNAME-}" ] || MVNW_USERNAME='' MVNW_PASSWORD='' ;;
 esac
 
+# local change: never send a user name and password over an unencrypted connection
+if [ -n "${MVNW_USERNAME-}" ]; then
+  case "$distributionUrl" in
+  https://*) ;;
+  *) die "MVNW_USERNAME/MVNW_PASSWORD need an https:// download address" ;;
+  esac
+fi
+
 if [ -z "${MVNW_USERNAME-}" ] && command -v wget >/dev/null; then
   verbose "Found wget ... using wget"
   wget ${__MVNW_QUIET_WGET:+"$__MVNW_QUIET_WGET"} "$distributionUrl" -O "$TMP_DOWNLOAD_DIR/$distributionUrlName" || die "wget: Failed to fetch $distributionUrl"
@@ -204,12 +212,25 @@ elif set_java_home; then
   cat >"$javaSource" <<-END
 	public class Downloader extends java.net.Authenticator
 	{
+	  private static java.net.URL origin;
 	  protected java.net.PasswordAuthentication getPasswordAuthentication()
 	  {
+	    // local change: answer only the first host over HTTPS, not a host we were redirected to
+	    java.net.URL asking = getRequestingURL();
+	    if ( asking == null || !"https".equalsIgnoreCase( asking.getProtocol() )
+	        || !origin.getHost().equalsIgnoreCase( asking.getHost() ) || port( origin ) != port( asking ) )
+	    {
+	      return null;
+	    }
 	    return new java.net.PasswordAuthentication( System.getenv( "MVNW_USERNAME" ), System.getenv( "MVNW_PASSWORD" ).toCharArray() );
+	  }
+	  private static int port( java.net.URL url )
+	  {
+	    return url.getPort() == -1 ? url.getDefaultPort() : url.getPort();
 	  }
 	  public static void main( String[] args ) throws Exception
 	  {
+	    origin = java.net.URI.create( args[0] ).toURL();
 	    setDefault( new Downloader() );
 	    java.nio.file.Files.copy( java.net.URI.create( args[0] ).toURL().openStream(), java.nio.file.Paths.get( args[1] ).toAbsolutePath().normalize() );
 	  }

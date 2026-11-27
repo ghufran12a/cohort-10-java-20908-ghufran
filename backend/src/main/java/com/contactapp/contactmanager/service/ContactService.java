@@ -97,7 +97,7 @@ public class ContactService {
 
     @Transactional
     public ContactResponse restore(Long userId, Long contactId) {
-        Contact contact = contactRepository.findByIdAndUserId(contactId, userId)
+        Contact contact = contactRepository.findForRestore(contactId, userId)
                 .filter(c -> c.getDeletedAt() != null)
                 .orElseThrow(() -> new ResourceNotFoundException("Contact not found in trash"));
 

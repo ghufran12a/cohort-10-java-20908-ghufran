@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -99,6 +100,27 @@ class ContactControllerTest {
                 .andExpect(jsonPath("$.message").value("Validation failed"))
                 .andExpect(jsonPath("$.fieldErrors['phones[0].phone']").exists());
         verifyNoInteractions(contactService);
+    }
+
+    @Test
+    void nullEmailOrPhoneEntriesReturn400() throws Exception {
+        String badJson = """
+                {"firstName":"Ali","lastName":"Khan","emails":[null],"phones":[null]}
+                """;
+
+        mockMvc.perform(post("/api/contacts").with(loggedIn())
+                        .contentType(MediaType.APPLICATION_JSON).content(badJson))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors['emails[0]']").value("Email entry must not be null"))
+                .andExpect(jsonPath("$.fieldErrors['phones[0]']").value("Phone entry must not be null"));
+        verifyNoInteractions(contactService);
+    }
+
+    @Test
+    void wrongHttpMethodReturns405WithTheAllowHeader() throws Exception {
+        mockMvc.perform(delete("/api/contacts").with(loggedIn()))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(header().exists("Allow"));
     }
 
     @Test

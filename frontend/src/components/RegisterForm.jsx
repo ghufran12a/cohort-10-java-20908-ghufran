@@ -15,6 +15,13 @@ export function RegisterForm() {
   function handleChange(event) {
     const { name, value } = event.target
     setForm((previous) => ({ ...previous, [name]: value }))
+    // the old messages are about the old text, so remove them as soon as the user edits
+    setError((previous) => {
+      const fieldErrors = { ...previous.fieldErrors }
+      delete fieldErrors[name]
+      if (name === 'password') delete fieldErrors.confirmPassword // "do not match" depends on both boxes
+      return { message: '', fieldErrors }
+    })
   }
 
   async function handleSubmit(event) {

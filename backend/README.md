@@ -45,12 +45,25 @@ $env:JWT_SECRET  = "a-long-random-text-of-at-least-32-characters"
 On Windows use `.\mvnw`. The tests use an in-memory H2 database, so they need neither MySQL nor the
 variables above.
 
+## Trash clean-up
+
+Deleted contacts can be recovered for 30 days. A scheduled job (`TrashCleanupJob`) removes older ones
+permanently: it runs one minute after the application starts and then every 24 hours. It locks the rows
+it is about to delete, so it cannot remove a contact that is being restored at the same moment. No manual
+step is needed.
+
 ## Maven Wrapper note
 
-`mvnw` and `mvnw.cmd` are the standard Apache Maven Wrapper scripts and are not edited by hand.
+`mvnw` and `mvnw.cmd` are the Apache Maven Wrapper scripts (3.3.4) with a few **local changes**, marked
+`local change` in the files:
+
+- a user name and password are sent only over HTTPS, and only to the host of the download address
+  (not to another host it redirects to);
+- `mvnw.cmd` works in folders whose name contains an apostrophe, and stops when the download fails.
+
+Regenerating the wrapper (`mvn wrapper:wrapper`) overwrites these changes.
 The downloaded Maven distribution is verified with `distributionSha256Sum`
 (`.mvn/wrapper/maven-wrapper.properties`).
 
-If you use a private Maven mirror with `MVNW_USERNAME` / `MVNW_PASSWORD`, set `MVNW_REPOURL` **only to an
-`https://` address**, and only to a mirror that does not redirect to another host. This project does not
-need any of these variables.
+`MVNW_REPOURL`, `MVNW_USERNAME` and `MVNW_PASSWORD` are only for private Maven mirrors. This project does
+not need any of them.

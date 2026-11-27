@@ -11,6 +11,7 @@ import com.contactapp.contactmanager.exception.DuplicateResourceException;
 import com.contactapp.contactmanager.exception.InvalidCredentialsException;
 import com.contactapp.contactmanager.exception.ResourceNotFoundException;
 import com.contactapp.contactmanager.repository.UserRepository;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+
+    private static final int BCRYPT_MAX_BYTES = 72;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -52,6 +55,8 @@ public class AuthService {
         if (phone != null && userRepository.existsByPhone(phone)) {
             throw new DuplicateResourceException("This phone number is already registered");
         }
+
+        requireHashableLength(request.password());
 
         User user = new User();
         user.setName(request.name().trim());
@@ -98,6 +103,7 @@ public class AuthService {
         if (request.currentPassword().equals(request.newPassword())) {
             throw new BadRequestException("New password must be different from the current password");
         }
+        requireHashableLength(request.newPassword());
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         log.info("User {} changed their password", userId);
     }
@@ -110,6 +116,13 @@ public class AuthService {
     private AuthResponse toAuthResponse(User user) {
         return new AuthResponse(jwtService.generateToken(user), "Bearer",
                 jwtService.getExpirationMinutes(), UserResponse.from(user));
+    }
+
+    // BCrypt works on bytes, and one character can need 2 to 4 bytes. Checking here gives the user a clear 400
+    private static void requireHashableLength(String password) {
+        if (password.getBytes(StandardCharsets.UTF_8).length > BCRYPT_MAX_BYTES) {
+            throw new BadRequestException("Password is too long. Please use a shorter password");
+        }
     }
 
     // "" or "   " -> null, otherwise trimmed

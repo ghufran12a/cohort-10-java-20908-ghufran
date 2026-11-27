@@ -12,6 +12,8 @@ import com.contactapp.contactmanager.dto.ContactResponse;
 import com.contactapp.contactmanager.dto.EmailDto;
 import com.contactapp.contactmanager.dto.PhoneDto;
 import com.contactapp.contactmanager.entity.Contact;
+import com.contactapp.contactmanager.entity.Email;
+import com.contactapp.contactmanager.entity.Phone;
 import com.contactapp.contactmanager.entity.User;
 import com.contactapp.contactmanager.exception.ResourceNotFoundException;
 import com.contactapp.contactmanager.repository.ContactRepository;
@@ -127,12 +129,16 @@ class ContactServiceTest {
     @Test
     void updateReplacesTheDetails() {
         Contact existing = contact("Old");
+        existing.addEmail(new Email("old@test.com", "home"));
+        existing.addPhone(new Phone("03110000000", "work"));
         when(contactRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(existing));
 
         ContactResponse response = contactService.update(1L, 5L, request());
 
         assertThat(response.firstName()).isEqualTo("Ali");
-        assertThat(response.phones()).hasSize(1);
+        // the old email and phone are REPLACED, not kept next to the new ones
+        assertThat(response.emails()).extracting(EmailDto::email).containsExactly("ali@test.com");
+        assertThat(response.phones()).extracting(PhoneDto::phone).containsExactly("03001234567");
         verify(contactRepository).saveAndFlush(existing);
     }
 
@@ -158,7 +164,7 @@ class ContactServiceTest {
     void restoreWorksWithin30Days() {
         Contact deleted = contact("Ali");
         deleted.setDeletedAt(LocalDateTime.now().minusDays(29));
-        when(contactRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(deleted));
+        when(contactRepository.findForRestore(5L, 1L)).thenReturn(Optional.of(deleted));
 
         ContactResponse response = contactService.restore(1L, 5L);
 
@@ -169,7 +175,7 @@ class ContactServiceTest {
     void restoreFailsAfter30Days() {
         Contact deleted = contact("Ali");
         deleted.setDeletedAt(LocalDateTime.now().minusDays(31));
-        when(contactRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(deleted));
+        when(contactRepository.findForRestore(5L, 1L)).thenReturn(Optional.of(deleted));
 
         assertThatThrownBy(() -> contactService.restore(1L, 5L))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -178,7 +184,7 @@ class ContactServiceTest {
 
     @Test
     void restoreFailsWhenContactIsNotInTrash() {
-        when(contactRepository.findByIdAndUserId(5L, 1L)).thenReturn(Optional.of(contact("Ali")));
+        when(contactRepository.findForRestore(5L, 1L)).thenReturn(Optional.of(contact("Ali")));
 
         assertThatThrownBy(() -> contactService.restore(1L, 5L))
                 .isInstanceOf(ResourceNotFoundException.class);

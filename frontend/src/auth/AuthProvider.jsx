@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '../api/client'
 import { AuthContext } from './AuthContext'
 import { session } from './session'
@@ -9,26 +9,30 @@ export function AuthProvider({ children }) {
   // The function form runs only on the first render: it restores the login after a page refresh.
   const [user, setUser] = useState(() => (session.getToken() ? session.getUser() : null))
 
-  const startSession = useCallback((data) => {
-    session.save(data.token, data.user)
+  // useRef: a value that survives re-draws without causing one. It numbers the login/register requests.
+  const latestRequest = useRef(0)
+
+  // Only the NEWEST login/register request may start a session. If the user switched tabs and sent a
+  // second one, a late answer to the first is ignored.
+  const authenticate = useCallback(async (url, body) => {
+    latestRequest.current += 1
+    const requestNumber = latestRequest.current
+    const { data } = await api.post(url, body)
+    if (requestNumber !== latestRequest.current) return
+    if (!session.save(data.token, data.user)) {
+      const error = new Error('Browser storage is blocked')
+      error.userMessage = 'Your browser is blocking storage, so you cannot log in. Allow site data and try again.'
+      throw error
+    }
     setUser(data.user)
   }, [])
 
   const login = useCallback(
-    async (identifier, password) => {
-      const { data } = await api.post('/auth/login', { identifier, password })
-      startSession(data)
-    },
-    [startSession],
+    (identifier, password) => authenticate('/auth/login', { identifier, password }),
+    [authenticate],
   )
 
-  const register = useCallback(
-    async (form) => {
-      const { data } = await api.post('/auth/register', form)
-      startSession(data)
-    },
-    [startSession],
-  )
+  const register = useCallback((form) => authenticate('/auth/register', form), [authenticate])
 
   const logout = useCallback(() => {
     session.clear()

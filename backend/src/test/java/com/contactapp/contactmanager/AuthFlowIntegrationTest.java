@@ -43,5 +43,9 @@ class AuthFlowIntegrationTest {
         LoginRequest oldLogin = new LoginRequest("flow@test.com", "Secret123");
         assertThatThrownBy(() -> authService.login(oldLogin)).isInstanceOf(InvalidCredentialsException.class);
         assertThat(authService.login(new LoginRequest("flow@test.com", "NewSecret456")).token()).isNotBlank();
+
+        // a very long password at login is just a wrong password, not a server error
+        LoginRequest tooLong = new LoginRequest("flow@test.com", "NewSecret456" + "x".repeat(100));
+        assertThatThrownBy(() -> authService.login(tooLong)).isInstanceOf(InvalidCredentialsException.class);
     }
 }

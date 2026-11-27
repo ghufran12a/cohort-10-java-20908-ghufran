@@ -1,12 +1,14 @@
 package com.contactapp.contactmanager.repository;
 
 import com.contactapp.contactmanager.entity.Contact;
+import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -33,9 +35,17 @@ public interface ContactRepository extends JpaRepository<Contact, Long> {
     // One contact, but ONLY if it belongs to this user (used for view, update, delete).
     Optional<Contact> findByIdAndUserId(Long id, Long userId);
 
+    // Same lookup, but it LOCKS the row (SELECT ... FOR UPDATE) until the transaction ends. Used by restore,
+    // so the clean-up job cannot delete a contact while it is being recovered.
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM Contact c WHERE c.id = :id AND c.user.id = :userId")
+    Optional<Contact> findForRestore(@Param("id") Long id, @Param("userId") Long userId);
+
     // The user's trash: soft-deleted contacts that can still be recovered.
     List<Contact> findByUserIdAndDeletedAtIsNotNull(Long userId);
 
     // Used by the clean-up job: contacts deleted before a given date (older than 30 days).
+    // The lock makes it wait for a running restore and then check deletedAt again.
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<Contact> findByDeletedAtBefore(LocalDateTime cutoff);
 }

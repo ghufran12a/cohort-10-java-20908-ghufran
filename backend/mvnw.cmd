@@ -32,12 +32,17 @@
 @SET __MVNW_ERROR__=
 @SET __MVNW_PSMODULEP_SAVE=%PSModulePath%
 @SET PSModulePath=
-@FOR /F "usebackq tokens=1* delims==" %%A IN (`powershell -noprofile "& {$scriptDir='%~dp0'; $script='%__MVNW_ARG0_NAME__%'; icm -ScriptBlock ([Scriptblock]::Create((Get-Content -Raw '%~f0'))) -NoNewScope}"`) DO @(
+@REM local change: paths go to PowerShell through variables, so a quote (') in a folder name cannot break the command
+@SET "__MVNW_SCRIPT_DIR=%~dp0"
+@SET "__MVNW_SCRIPT_PATH=%~f0"
+@FOR /F "usebackq tokens=1* delims==" %%A IN (`powershell -noprofile "& {$scriptDir=$env:__MVNW_SCRIPT_DIR; $script=$env:__MVNW_ARG0_NAME__; icm -ScriptBlock ([Scriptblock]::Create((Get-Content -Raw -LiteralPath $env:__MVNW_SCRIPT_PATH))) -NoNewScope}"`) DO @(
   IF "%%A"=="MVN_CMD" (set __MVNW_CMD__=%%B) ELSE IF "%%B"=="" (echo %%A) ELSE (echo %%A=%%B)
 )
 @SET PSModulePath=%__MVNW_PSMODULEP_SAVE%
 @SET __MVNW_PSMODULEP_SAVE=
 @SET __MVNW_ARG0_NAME__=
+@SET __MVNW_SCRIPT_DIR=
+@SET __MVNW_SCRIPT_PATH=
 @SET MVNW_USERNAME=
 @SET MVNW_PASSWORD=
 @IF NOT "%__MVNW_CMD__%"=="" ("%__MVNW_CMD__%" %*)
@@ -118,6 +123,7 @@ trap {
     try { Remove-Item $TMP_DOWNLOAD_DIR -Recurse -Force | Out-Null }
     catch { Write-Warning "Cannot remove $TMP_DOWNLOAD_DIR" }
   }
+  break # local change: stop after cleaning up, do not carry on with the failed download
 }
 
 New-Item -Itemtype Directory -Path "$MAVEN_HOME_PARENT" -Force | Out-Null
@@ -129,7 +135,17 @@ Write-Verbose "Downloading to: $TMP_DOWNLOAD_DIR/$distributionUrlName"
 
 $webclient = New-Object System.Net.WebClient
 if ($env:MVNW_USERNAME -and $env:MVNW_PASSWORD) {
-  $webclient.Credentials = New-Object System.Net.NetworkCredential($env:MVNW_USERNAME, $env:MVNW_PASSWORD)
+  # local change: only over HTTPS, and tied to the first host so a redirect to another host gets nothing
+  $downloadUri = [Uri]$distributionUrl
+  if ($downloadUri.Scheme -ne "https") {
+    Write-Error "MVNW_USERNAME/MVNW_PASSWORD need an https:// download address"
+  }
+  $origin = [Uri]$downloadUri.GetLeftPart([UriPartial]::Authority)
+  $login = New-Object System.Net.NetworkCredential($env:MVNW_USERNAME, $env:MVNW_PASSWORD)
+  $credentials = New-Object System.Net.CredentialCache
+  $credentials.Add($origin, "Basic", $login)
+  $credentials.Add($origin, "Digest", $login)
+  $webclient.Credentials = $credentials
 }
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $webclient.DownloadFile($distributionUrl, "$TMP_DOWNLOAD_DIR/$distributionUrlName") | Out-Null

@@ -55,6 +55,32 @@ class AuthServiceTest {
         return user;
     }
 
+    // 38 characters, but 74 bytes in UTF-8 (each accented e needs 2 bytes)
+    private static final String TOO_MANY_BYTES = "A1" + "\u00e9".repeat(36);
+
+    @Test
+    void registerRejectsAPasswordLongerThan72Bytes() {
+        RegisterRequest request = new RegisterRequest("Ali", "ali@test.com", null, TOO_MANY_BYTES);
+
+        assertThatThrownBy(() -> authService.register(request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("too long");
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void changePasswordRejectsAPasswordLongerThan72Bytes() {
+        User user = userWithPassword("Secret123");
+        String oldHash = user.getPasswordHash();
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        ChangePasswordRequest request = new ChangePasswordRequest("Secret123", TOO_MANY_BYTES);
+
+        assertThatThrownBy(() -> authService.changePassword(1L, request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("too long");
+        assertThat(user.getPasswordHash()).isEqualTo(oldHash);
+    }
+
     @Test
     void registerStoresAHashNotThePassword() {
         when(userRepository.save(any(User.class))).thenAnswer(call -> call.getArgument(0));

@@ -19,7 +19,8 @@ public record RegisterRequest(
                 message = "Phone must contain only digits (7 to 15), optionally starting with +")
         String phone,
 
-        // max 72: BCrypt only uses the first 72 bytes of a password
+        // BCrypt rejects passwords longer than 72 BYTES in UTF-8. @Size counts characters, and some characters
+        // (like accented letters) need more than one byte, so AuthService also checks the byte length
         @NotBlank(message = "Password is required")
         @Size(min = 8, max = 72, message = "Password must be 8 to 72 characters")
         @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).+$",
