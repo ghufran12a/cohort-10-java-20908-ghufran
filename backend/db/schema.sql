@@ -8,7 +8,7 @@ CREATE TABLE users (
     phone VARCHAR(20) UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB; -- InnoDB is the MySQL engine that enforces foreign keys (and ON DELETE CASCADE)
 
 CREATE TABLE contacts (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -22,7 +22,7 @@ CREATE TABLE contacts (
     FOREIGN KEY (user_id)
         REFERENCES users(id)
         ON DELETE CASCADE
-);
+) ENGINE=InnoDB;
 
 CREATE TABLE emails (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -33,7 +33,7 @@ CREATE TABLE emails (
     FOREIGN KEY (contact_id)
         REFERENCES contacts(id)
         ON DELETE CASCADE
-);
+) ENGINE=InnoDB;
 
 CREATE TABLE phones (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -44,5 +44,5 @@ CREATE TABLE phones (
     FOREIGN KEY (contact_id)
         REFERENCES contacts(id)
         ON DELETE CASCADE
-);
+) ENGINE=InnoDB;
 
