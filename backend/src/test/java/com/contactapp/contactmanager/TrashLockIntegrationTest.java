@@ -2,6 +2,7 @@ package com.contactapp.contactmanager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 
 import com.contactapp.contactmanager.entity.Contact;
 import com.contactapp.contactmanager.entity.Phone;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -39,6 +41,9 @@ class TrashLockIntegrationTest {
 
     @Autowired
     private PlatformTransactionManager transactionManager;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @AfterEach
     void cleanUp() {
@@ -77,11 +82,27 @@ class TrashLockIntegrationTest {
                     purge.completeExceptionally(e);
                 }
             });
+            // wait until the database itself says the purge is stuck behind us. Without this, a purge that
+            // simply started late would also look like it was "waiting"
+            waitForBlockedSession();
             // while the restore is not finished, the purge has to wait
             assertThatThrownBy(() -> purge.get(500, TimeUnit.MILLISECONDS)).isInstanceOf(TimeoutException.class);
         });
 
         assertThat(purge.get(10, TimeUnit.SECONDS)).isZero();
         assertThat(contactRepository.findById(contactId)).isPresent();
+    }
+
+    // H2 lists every database connection; BLOCKER_ID is filled in while one connection waits for another's lock
+    private void waitForBlockedSession() {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        while (jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.SESSIONS WHERE BLOCKER_ID IS NOT NULL",
+                Integer.class) == 0) {
+            if (System.nanoTime() > deadline) {
+                fail("the purge never waited for the restore's lock");
+            }
+            Thread.onSpinWait();
+        }
     }
 }
