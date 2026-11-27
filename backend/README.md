@@ -64,7 +64,10 @@ step is needed.
   (without `unzip` it stops with a message before downloading);
 - `mvnw.cmd` works in folders whose name contains an apostrophe, and stops when the download fails.
 
-Regenerating the wrapper (`mvn wrapper:wrapper`) overwrites these changes.
+Regenerating the wrapper (`mvn wrapper:wrapper`) overwrites these changes. `MavenWrapperProtectionTest`
+fails when that happens, so **run `./mvnw test` after regenerating**. To get the changes back, restore both
+scripts from Git (`git restore --source=<last good commit> mvnw mvnw.cmd`), or apply the lines marked
+`local change` again to the new scripts.
 The downloaded Maven distribution is verified with `distributionSha256Sum`
 (`.mvn/wrapper/maven-wrapper.properties`).
 
