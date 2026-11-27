@@ -59,6 +59,9 @@ step is needed.
 
 - a user name and password are sent only over HTTPS, and only to the host of the download address
   (not to another host it redirects to);
+- `mvnw` does not give this login to a proxy that asks for one;
+- `mvnw` needs `unzip` while `distributionSha256Sum` is set, because that checksum is for the `.zip` file
+  (without `unzip` it stops with a message before downloading);
 - `mvnw.cmd` works in folders whose name contains an apostrophe, and stops when the download fails.
 
 Regenerating the wrapper (`mvn wrapper:wrapper`) overwrites these changes.

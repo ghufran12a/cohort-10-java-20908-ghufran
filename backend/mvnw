@@ -177,6 +177,9 @@ verbose "Downloading to: $TMP_DOWNLOAD_DIR/$distributionUrlName"
 
 # select .zip or .tar.gz
 if ! command -v unzip >/dev/null; then
+  # local change: distributionSha256Sum belongs to the .zip file, so a .tar.gz download could never pass it
+  [ -z "${distributionSha256Sum-}" ] ||
+    die "unzip is needed to verify and install Maven (distributionSha256Sum is for the .zip file). Please install unzip and run again"
   distributionUrl="${distributionUrl%.zip}.tar.gz"
   distributionUrlName="${distributionUrl##*/}"
 fi
@@ -215,6 +218,11 @@ elif set_java_home; then
 	  private static java.net.URL origin;
 	  protected java.net.PasswordAuthentication getPasswordAuthentication()
 	  {
+	    // local change: this login is for the download server only, never for a proxy on the way to it
+	    if ( getRequestorType() != RequestorType.SERVER )
+	    {
+	      return null;
+	    }
 	    // local change: answer only the first host over HTTPS, not a host we were redirected to
 	    java.net.URL asking = getRequestingURL();
 	    if ( asking == null || !"https".equalsIgnoreCase( asking.getProtocol() )
